@@ -1,0 +1,89 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: app-build-deploy
+  namespace: tekton-pipelines
+spec:
+  params:
+    - name: IMAGE_TAG
+    - name: GIT_SHA
+    - name: BUILD_TIME
+    - name: GITHUB_TOKEN
+  workspaces:
+    - name: source-ws
+    - name: gitops-ws
+  tasks:
+    - name: git-clone-app
+      taskRef:
+        resolver: hub
+        params:
+          - name: catalog
+            value: tekton
+          - name: type
+            value: task
+          - name: name
+            value: git-clone
+          - name: version
+            value: "0.9"
+      workspaces:
+        - name: output
+          workspace: source-ws
+      params:
+        - name: url
+          value: https://github.com/gitadmin/app-source.git
+        - name: revision
+          value: main
+
+    - name: kaniko-build-push
+      runAfter: [git-clone-app]
+      taskSpec:
+        workspaces:
+          - name: source
+        steps:
+          - name: build-push
+            image: gcr.io/kaniko-project/executor:latest
+            workingDir: /workspace/source
+            args:
+              - --dockerfile=Dockerfile
+              - --context=dir:///workspace/source
+              - --destination=harbor.apj-cxrules.win/lab/my-app:$(params.IMAGE_TAG)
+              - --insecure
+              - --insecure-pull
+              - --skip-tls-verify
+              - --build-arg=APP_VERSION=$(params.IMAGE_TAG)
+              - --build-arg=GIT_SHA=$(params.GIT_SHA)
+              - --build-arg=BUILD_TIME=$(params.BUILD_TIME)
+            volumeMounts:
+              - name: docker-config
+                mountPath: /kaniko/.docker/config.json
+                subPath: .dockerconfigjson
+        volumes:
+          - name: docker-config
+            secret:
+              secretName: harbor-robot-creds
+      workspaces:
+        - name: source
+          workspace: source-ws
+
+    - name: update-gitops-tag
+      runAfter: [kaniko-build-push]
+      taskSpec:
+        steps:
+          - name: clone-gitops
+            image: alpine/git:latest
+            script: |
+              git clone https://$(params.GITHUB_TOKEN)@github.com/gitadmin/gitops-config.git /workspace/gitops
+          - name: update-tag
+            image: alpine/git:latest
+            script: |
+              sed -i 's|harbor.apj-cxrules.win/lab/my-app:.*|harbor.apj-cxrules.win/lab/my-app:$(params.IMAGE_TAG) # {"$imagepolicy": "flux-system:my-app"}|' \
+                /workspace/gitops/apps/base/deployment.yaml
+          - name: push
+            image: alpine/git:latest
+            script: |
+              cd /workspace/gitops
+              git config user.email "tekton@lab.internal"
+              git config user.name "Tekton"
+              git add -A
+              git commit -m "chore: deploy my-app:$(params.IMAGE_TAG)"
+              git push origin main

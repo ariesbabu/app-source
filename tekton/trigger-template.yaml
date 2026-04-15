@@ -1,0 +1,44 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: app-source-template
+  namespace: tekton-pipelines
+spec:
+  params:
+    - name: IMAGE_TAG
+    - name: GIT_SHA
+    - name: BUILD_TIME
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1
+      kind: PipelineRun
+      metadata:
+        generateName: app-build-deploy-run-
+        namespace: tekton-pipelines
+      spec:
+        pipelineRef:
+          name: app-build-deploy
+        serviceAccountName: tekton-sa
+        params:
+          - name: IMAGE_TAG
+            value: $(tt.params.IMAGE_TAG)
+          - name: GIT_SHA
+            value: $(tt.params.GIT_SHA)
+          - name: BUILD_TIME
+            value: $(tt.params.BUILD_TIME)
+          - name: GITHUB_TOKEN
+            value: $(secret.github-pat.token)  # injected from secret
+        workspaces:
+          - name: source-ws
+            volumeClaimTemplate:
+              spec:
+                accessModes: [ReadWriteOnce]
+                resources:
+                  requests:
+                    storage: 2Gi
+          - name: gitops-ws
+            volumeClaimTemplate:
+              spec:
+                accessModes: [ReadWriteOnce]
+                resources:
+                  requests:
+                    storage: 1Gi

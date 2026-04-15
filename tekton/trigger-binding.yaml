@@ -1,0 +1,13 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerBinding
+metadata:
+  name: app-source-binding
+  namespace: tekton-pipelines
+spec:
+  params:
+    - name: IMAGE_TAG
+      value: $(body.head_commit.id[0:7])
+    - name: GIT_SHA
+      value: $(body.head_commit.id)
+    - name: BUILD_TIME
+      value: $(extensions.current_timestamp)
