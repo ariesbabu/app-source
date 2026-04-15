@@ -30,7 +30,7 @@ spec:
           workspace: source-ws
       params:
         - name: url
-          value: https://github.com/gitadmin/app-source.git
+          value: https://github.com/ariesbabu/app-source.git
         - name: revision
           value: main
 
@@ -72,7 +72,7 @@ spec:
           - name: clone-gitops
             image: alpine/git:latest
             script: |
-              git clone https://$(params.GITHUB_TOKEN)@github.com/gitadmin/gitops-config.git /workspace/gitops
+              git clone https://$(params.GITHUB_TOKEN)@github.com/ariesbabu/gitops-config.git /workspace/gitops
           - name: update-tag
             image: alpine/git:latest
             script: |
