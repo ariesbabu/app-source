@@ -14,7 +14,7 @@ HTML = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>App Update Visualiser</title>
+  <title>App Update Visualiser - Updated</title>
   <style>
     body {{ font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0;
            display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }}
