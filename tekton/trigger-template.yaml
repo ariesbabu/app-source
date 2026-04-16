@@ -56,11 +56,6 @@ metadata:
   name: app-source-template
   namespace: tekton-pipelines
 spec:
-  params:
-    - name: IMAGE_TAG
-      default: "latest"
-    - name: GIT_SHA
-      default: "unknown"
   resourcetemplates:
     - apiVersion: tekton.dev/v1
       kind: PipelineRun
