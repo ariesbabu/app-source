@@ -15,16 +15,7 @@ spec:
   tasks:
     - name: git-clone-app
       taskRef:
-        resolver: hub
-        params:
-          - name: catalog
-            value: tekton
-          - name: type
-            value: task
-          - name: name
-            value: git-clone
-          - name: version
-            value: "0.9"
+        name: git-clone
       workspaces:
         - name: output
           workspace: source-ws
@@ -33,7 +24,6 @@ spec:
           value: https://github.com/ariesbabu/app-source.git
         - name: revision
           value: main
-
     - name: kaniko-build-push
       runAfter: [git-clone-app]
       taskSpec:
