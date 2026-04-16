@@ -82,19 +82,17 @@ spec:
                 accessModes: [ReadWriteOnce]
                 resources:
                   requests:
-                    storage: 1Gi # Match the size of your working manual run
+                    storage: 1Gi
           - name: gitops-ws
             emptyDir: {}
-        # --- THE FIX: taskRunSpecs for targeted permissions ---
-        taskRunSpecs:
-          - pipelineTaskName: git-clone-app
-            podTemplate:
-              securityContext:
-                runAsUser: 0      # Force git-clone to run as root to "claim" the new PVC
-                runAsGroup: 0
-                fsGroup: 0
-        # This remains as a fallback for other tasks
+        # MOVE THE FIX HERE: taskRunTemplate covers everything
         taskRunTemplate:
           podTemplate:
             securityContext:
-              fsGroup: 0
+              runAsUser: 0      # Explicitly run as root
+              runAsGroup: 0     # Group root
+              fsGroup: 0        # Workspace ownership root
+            # If your cluster is very strict, add this:
+            # stepTemplate:
+            #   securityContext:
+            #     runAsUser: 0
