@@ -2,7 +2,8 @@ apiVersion: triggers.tekton.dev/v1beta1
 kind: TriggerBinding
 metadata:
   name: app-source-binding
-  namespace: tekton-pipelines
+  # namespace: tekton-pipelines
+  namespace: ci
 spec:
   params:
     - name: IMAGE_TAG

@@ -30,7 +30,8 @@ apiVersion: triggers.tekton.dev/v1beta1
 kind: EventListener
 metadata:
   name: app-source-listener
-  namespace: tekton-pipelines
+  # namespace: tekton-pipelines
+  namespace: ci
 spec:
   serviceAccountName: tekton-sa
   # resources:
