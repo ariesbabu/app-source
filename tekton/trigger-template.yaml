@@ -1,3 +1,55 @@
+# apiVersion: triggers.tekton.dev/v1beta1
+# kind: TriggerTemplate
+# metadata:
+#   name: app-source-template
+#   namespace: tekton-pipelines
+# spec:
+#   params:
+#     - name: IMAGE_TAG
+#       default: "latest"
+#     - name: GIT_SHA
+#       default: "unknown"
+#   resourcetemplates:
+#     - apiVersion: tekton.dev/v1
+#       kind: PipelineRun
+#       metadata:
+#         generateName: app-build-deploy-run-
+#         # namespace: tekton-pipelines
+#         namespace: ci
+#       spec:
+#         pipelineRef:
+#           name: app-build-deploy
+#         serviceAccountName: tekton-sa
+#         params:
+#           - name: IMAGE_TAG
+#             value: $(tt.params.IMAGE_TAG)
+#           - name: GIT_SHA
+#             value: $(tt.params.GIT_SHA)
+#           - name: BUILD_TIME
+#             value: "$(tt.params.GIT_SHA)"
+#           - name: GITHUB_TOKEN
+#             value: $(secret.github-pat.token)
+#         workspaces:
+#           - name: source-ws
+#             volumeClaimTemplate:
+#               spec:
+#                 accessModes: [ReadWriteOnce]
+#                 resources:
+#                   requests:
+#                     storage: 2Gi
+#           - name: gitops-ws
+#             emptyDir: {}
+#             # volumeClaimTemplate:
+#             #   spec:
+#             #     accessModes: [ReadWriteOnce]
+#             #     resources:
+#             #       requests:
+#             #         storage: 1Gi
+#         taskRunTemplate:
+#           podTemplate:
+#             securityContext:
+#               fsGroup: 0
+#               runAsGroup: 0
 apiVersion: triggers.tekton.dev/v1beta1
 kind: TriggerTemplate
 metadata:
@@ -14,7 +66,6 @@ spec:
       kind: PipelineRun
       metadata:
         generateName: app-build-deploy-run-
-        # namespace: tekton-pipelines
         namespace: ci
       spec:
         pipelineRef:
@@ -36,17 +87,19 @@ spec:
                 accessModes: [ReadWriteOnce]
                 resources:
                   requests:
-                    storage: 2Gi
+                    storage: 1Gi # Match the size of your working manual run
           - name: gitops-ws
             emptyDir: {}
-            # volumeClaimTemplate:
-            #   spec:
-            #     accessModes: [ReadWriteOnce]
-            #     resources:
-            #       requests:
-            #         storage: 1Gi
+        # --- THE FIX: taskRunSpecs for targeted permissions ---
+        taskRunSpecs:
+          - pipelineTaskName: git-clone-app
+            podTemplate:
+              securityContext:
+                runAsUser: 0      # Force git-clone to run as root to "claim" the new PVC
+                runAsGroup: 0
+                fsGroup: 0
+        # This remains as a fallback for other tasks
         taskRunTemplate:
           podTemplate:
             securityContext:
               fsGroup: 0
-              runAsGroup: 0
