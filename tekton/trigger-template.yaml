@@ -6,14 +6,16 @@ metadata:
 spec:
   params:
     - name: IMAGE_TAG
+      default: "latest"
     - name: GIT_SHA
-    - name: BUILD_TIME
+      default: "unknown"
   resourcetemplates:
     - apiVersion: tekton.dev/v1
       kind: PipelineRun
       metadata:
         generateName: app-build-deploy-run-
-        namespace: tekton-pipelines
+        # namespace: tekton-pipelines
+        namespace: ci
       spec:
         pipelineRef:
           name: app-build-deploy
@@ -24,9 +26,9 @@ spec:
           - name: GIT_SHA
             value: $(tt.params.GIT_SHA)
           - name: BUILD_TIME
-            value: $(tt.params.BUILD_TIME)
+            value: "$(tt.params.GIT_SHA)"
           - name: GITHUB_TOKEN
-            value: $(secret.github-pat.token)  # injected from secret
+            value: $(secret.github-pat.token)
         workspaces:
           - name: source-ws
             volumeClaimTemplate:
