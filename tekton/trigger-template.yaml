@@ -44,3 +44,7 @@ spec:
                 resources:
                   requests:
                     storage: 1Gi
+        taskRunTemplate:
+          podTemplate:
+            securityContext:
+              fsGroup: 0
