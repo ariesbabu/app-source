@@ -38,13 +38,15 @@ spec:
                   requests:
                     storage: 2Gi
           - name: gitops-ws
-            volumeClaimTemplate:
-              spec:
-                accessModes: [ReadWriteOnce]
-                resources:
-                  requests:
-                    storage: 1Gi
+            emptyDir: {}
+            # volumeClaimTemplate:
+            #   spec:
+            #     accessModes: [ReadWriteOnce]
+            #     resources:
+            #       requests:
+            #         storage: 1Gi
         taskRunTemplate:
           podTemplate:
             securityContext:
               fsGroup: 0
+              runAsGroup: 0
