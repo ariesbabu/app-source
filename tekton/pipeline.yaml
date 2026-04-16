@@ -2,7 +2,8 @@ apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
   name: app-build-deploy
-  namespace: tekton-pipelines
+  # namespace: tekton-pipelines
+  namespace: ci
 spec:
   params:
     - name: IMAGE_TAG
