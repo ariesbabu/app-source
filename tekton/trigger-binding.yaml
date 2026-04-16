@@ -6,7 +6,7 @@ metadata:
 spec:
   params:
     - name: IMAGE_TAG
-      value: $(body.head_commit.id[0:7])
+      value: $(body.head_commit.id)
     - name: GIT_SHA
       value: $(body.head_commit.id)
     - name: BUILD_TIME
