@@ -73,11 +73,11 @@ spec:
         serviceAccountName: tekton-sa
         params:
           - name: IMAGE_TAG
-            value: $(tt.params.IMAGE_TAG)
+            value: "v1.0.1"
           - name: GIT_SHA
-            value: $(tt.params.GIT_SHA)
+            value: "abc1234"
           - name: BUILD_TIME
-            value: "$(tt.params.GIT_SHA)"
+            value: "2026-04-16"
           - name: GITHUB_TOKEN
             value: $(secret.github-pat.token)
         workspaces:
