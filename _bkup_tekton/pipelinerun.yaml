@@ -1,0 +1,33 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: app-deploy-run-
+  namespace: ci
+spec:
+  pipelineRef:
+    name: app-build-deploy
+  params:
+    - name: IMAGE_TAG
+      value: "v1.0.1"
+    - name: GIT_SHA
+      value: "abc1234"
+    - name: BUILD_TIME
+      value: "2026-04-16"
+    - name: GITHUB_TOKEN
+      value: $(secret.github-pat.token)
+  workspaces:
+    - name: source-ws
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 1Gi
+    - name: gitops-ws
+      emptyDir: {}
+  # FIX: In v1, podTemplate must be inside taskRunTemplate
+  taskRunTemplate:
+    podTemplate:
+      securityContext:
+        fsGroup: 0
