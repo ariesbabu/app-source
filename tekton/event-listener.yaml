@@ -1,29 +1,58 @@
+# apiVersion: triggers.tekton.dev/v1beta1
+# kind: EventListener
+# metadata:
+#   name: app-source-listener
+#   namespace: tekton-pipelines
+# spec:
+#   serviceAccountName: tekton-sa
+#   resources:
+#     kubernetesService:
+#       type: ClusterIP
+#   triggers:
+#     - name: github-push-main
+#       interceptors:
+#         - ref:
+#             name: github
+#           params:
+#             - name: eventTypes
+#               value: ["push"]
+#         - ref:
+#             name: cel
+#           params:
+#             - name: filter
+#               value: "body.ref == 'refs/heads/main'"
+#       bindings:
+#         - ref: app-source-binding
+#       template:
+#         ref: app-source-template
+
 apiVersion: triggers.tekton.dev/v1beta1
 kind: EventListener
 metadata:
-  name: app-event-listener
-  namespace: tekton-pipelines
+  name: app-source-listener
+  # namespace: tekton-pipelines
+  namespace: ci
 spec:
   serviceAccountName: tekton-sa
-
+  # resources:
+  #   kubernetesService:
+  #     # This is where 'type' (formerly serviceType) lives
+  #     spec:
+  #       type: ClusterIP
   triggers:
-    - name: github-push-trigger
-
+    - name: github-push-main
       interceptors:
         - ref:
             name: github
           params:
             - name: eventTypes
               value: ["push"]
-
         - ref:
             name: cel
           params:
             - name: filter
-              value: "body.ref.startsWith('refs/heads/main')"
-
+              value: "body.ref == 'refs/heads/main'"
       bindings:
-        - ref: app-github-binding
-
+        - ref: app-source-binding
       template:
-        ref: app-build-deploy-template
+        ref: app-source-template

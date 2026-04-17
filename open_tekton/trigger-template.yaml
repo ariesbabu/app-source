@@ -1,0 +1,54 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: app-build-deploy-template
+  namespace: tekton-pipelines
+spec:
+  params:
+    - name: git_sha
+    - name: repo_url
+    - name: branch
+    - name: short_sha
+
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1
+      kind: PipelineRun
+      metadata:
+        generateName: app-build-deploy-run-
+        namespace: ci
+      spec:
+        serviceAccountName: tekton-sa
+
+        pipelineRef:
+          name: app-build-deploy
+
+        params:
+          - name: GIT_URL
+            value: $(tt.params.repo_url)
+
+          - name: GIT_SHA
+            value: $(tt.params.git_sha)
+
+          - name: IMAGE_TAG
+            value: $(tt.params.short_sha)
+
+          - name: BUILD_TIME
+            value: "$(context.pipelineRun.creationTimestamp)"
+
+        workspaces:
+          - name: source-ws
+            volumeClaimTemplate:
+              spec:
+                accessModes:
+                  - ReadWriteOnce
+                resources:
+                  requests:
+                    storage: 1Gi
+
+          - name: gitops-ws
+            emptyDir: {}
+
+        taskRunTemplate:
+          podTemplate:
+            securityContext:
+              fsGroup: 0

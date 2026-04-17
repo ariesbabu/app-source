@@ -1,0 +1,47 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: app-build-deploy
+  namespace: ci
+spec:
+  params:
+    - name: GIT_URL
+      value: "https://github.com/ariesbabu/app-source.git"
+    - name: GIT_SHA
+    - name: IMAGE_TAG
+    - name: BUILD_TIME
+
+  workspaces:
+    - name: source-ws
+    - name: gitops-ws
+
+  tasks:
+    - name: git-clone-app
+      taskRef:
+        name: git-clone-app
+      workspaces:
+        - name: output
+          workspace: source-ws
+      params:
+        - name: url
+          value: $(params.GIT_URL)
+        - name: revision
+          value: $(params.GIT_SHA)
+      workspaces:
+        - name: output
+          workspace: source-ws
+
+    - name: build-and-push
+      runAfter: ["git-clone-app"]
+      taskRef:
+        name: kaniko
+      params:
+        - name: IMAGE
+          value: harbor.apj-cxrules.win/lab/my-app:$(params.IMAGE_TAG)
+        - name: DOCKERFILE
+          value: ./Dockerfile
+        - name: CONTEXT
+          value: .
+      workspaces:
+        - name: source
+          workspace: source-ws
