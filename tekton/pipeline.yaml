@@ -65,6 +65,12 @@ spec:
             image: alpine/git:latest
             securityContext:
               runAsUser: 0
+            env:
+              - name: GITHUB_TOKEN
+                valueFrom:
+                  secretKeyRef:
+                    name: github-pat          # your secret in the ci namespace
+                    key: token
             script: |
               git clone https://$(params.GITHUB_TOKEN)@github.com/ariesbabu/gitops-config.git /workspace/gitops-ws
               cd /workspace/gitops-ws
