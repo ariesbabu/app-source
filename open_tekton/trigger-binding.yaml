@@ -1,15 +1,31 @@
+# apiVersion: triggers.tekton.dev/v1beta1
+# kind: TriggerBinding
+# metadata:
+#   name: app-github-binding
+#   namespace: tekton-pipelines
+# spec:
+#   params:
+#     - name: git_sha
+#       value: $(body.head_commit.id)
+#     - name: repo_url
+#       value: $(body.repository.clone_url)
+#     - name: branch
+#       value: $(body.ref)
+#     - name: short_sha
+#       value: $(body.head_commit.id[0:7])
+
 apiVersion: triggers.tekton.dev/v1beta1
 kind: TriggerBinding
 metadata:
-  name: app-github-binding
+  name: github-push-binding
   namespace: tekton-pipelines
 spec:
   params:
-    - name: git_sha
-      value: $(body.head_commit.id)
-    - name: repo_url
-      value: $(body.repository.clone_url)
-    - name: branch
-      value: $(body.ref)
-    - name: short_sha
-      value: $(body.head_commit.id[0:7])
+    - name: git-sha
+      value: $(body.after)               # Full commit SHA from push event
+
+    - name: git-ref
+      value: $(body.ref)                 # e.g. refs/heads/main (optional but useful)
+
+    - name: build-time
+      value: $(tt.time)                  # Tekton-provided current timestamp

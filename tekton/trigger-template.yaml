@@ -4,17 +4,11 @@
 #   name: app-source-template
 #   namespace: tekton-pipelines
 # spec:
-#   params:
-#     - name: IMAGE_TAG
-#       default: "latest"
-#     - name: GIT_SHA
-#       default: "unknown"
 #   resourcetemplates:
 #     - apiVersion: tekton.dev/v1
 #       kind: PipelineRun
 #       metadata:
 #         generateName: app-build-deploy-run-
-#         # namespace: tekton-pipelines
 #         namespace: ci
 #       spec:
 #         pipelineRef:
@@ -22,40 +16,43 @@
 #         serviceAccountName: tekton-sa
 #         params:
 #           - name: IMAGE_TAG
-#             value: $(tt.params.IMAGE_TAG)
+#             value: "v1.0.1"
 #           - name: GIT_SHA
-#             value: $(tt.params.GIT_SHA)
+#             value: "abc1234"
 #           - name: BUILD_TIME
-#             value: "$(tt.params.GIT_SHA)"
+#             value: "2026-04-16"
 #           - name: GITHUB_TOKEN
 #             value: $(secret.github-pat.token)
 #         workspaces:
 #           - name: source-ws
 #             volumeClaimTemplate:
 #               spec:
-#                 accessModes: [ReadWriteOnce]
+#                 accessModes: 
+#                   - ReadWriteOnce
 #                 resources:
 #                   requests:
-#                     storage: 2Gi
+#                     storage: 1Gi
 #           - name: gitops-ws
 #             emptyDir: {}
-#             # volumeClaimTemplate:
-#             #   spec:
-#             #     accessModes: [ReadWriteOnce]
-#             #     resources:
-#             #       requests:
-#             #         storage: 1Gi
+#         # MOVE THE FIX HERE: taskRunTemplate covers everything
 #         taskRunTemplate:
 #           podTemplate:
 #             securityContext:
 #               fsGroup: 0
-#               runAsGroup: 0
 apiVersion: triggers.tekton.dev/v1beta1
 kind: TriggerTemplate
 metadata:
   name: app-source-template
   namespace: tekton-pipelines
 spec:
+  params:
+    - name: git-sha
+      description: The full commit SHA from the GitHub push event
+    - name: git-ref
+      description: The git ref (e.g. refs/heads/main)
+    - name: build-time
+      description: Build timestamp (provided by Tekton)
+
   resourcetemplates:
     - apiVersion: tekton.dev/v1
       kind: PipelineRun
@@ -67,26 +64,28 @@ spec:
           name: app-build-deploy
         serviceAccountName: tekton-sa
         params:
+          # Recommended dynamic IMAGE_TAG (short SHA + timestamp)
           - name: IMAGE_TAG
-            value: "v1.0.1"
+            value: "v$(tt.params.git-sha:0:7)-$(tt.params.build-time:yyyyMMdd-HHmmss)"
+
           - name: GIT_SHA
-            value: "abc1234"
+            value: "$(tt.params.git-sha)"
+
           - name: BUILD_TIME
-            value: "2026-04-16"
-          - name: GITHUB_TOKEN
-            value: $(secret.github-pat.token)
+            value: "$(tt.params.build-time:yyyy-MM-dd HH:mm:ss)"
+
+          # GITHUB_TOKEN is NO longer passed here (it's injected via secretKeyRef in the task)
         workspaces:
           - name: source-ws
             volumeClaimTemplate:
               spec:
-                accessModes: 
+                accessModes:
                   - ReadWriteOnce
                 resources:
                   requests:
                     storage: 1Gi
           - name: gitops-ws
             emptyDir: {}
-        # MOVE THE FIX HERE: taskRunTemplate covers everything
         taskRunTemplate:
           podTemplate:
             securityContext:
