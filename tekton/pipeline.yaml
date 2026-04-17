@@ -15,22 +15,23 @@ spec:
     - name: gitops-ws
 
   tasks:
-    - name: clone
+    - name: git-clone-app
       taskRef:
         name: git-clone
+      workspaces:
+        - name: output
+          workspace: source-ws
       params:
         - name: url
           value: https://github.com/ariesbabu/app-source.git
         - name: revision
-          value: $(params.GIT_SHA)
-        - name: deleteExisting
-          value: "true"
+          value: main
       workspaces:
         - name: output
           workspace: source-ws
 
     - name: build-and-push
-      runAfter: ["clone"]
+      runAfter: ["git-clone-app"]
       taskRef:
         name: kaniko
       params:
