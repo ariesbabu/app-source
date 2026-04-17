@@ -17,7 +17,7 @@ spec:
   tasks:
     - name: git-clone-app
       taskRef:
-        name: git-clone
+        name: git-clone-app
       workspaces:
         - name: output
           workspace: source-ws
