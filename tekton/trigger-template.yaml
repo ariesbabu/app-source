@@ -66,7 +66,7 @@ spec:
         params:
           # Recommended dynamic IMAGE_TAG (short SHA + timestamp)
           - name: IMAGE_TAG
-            value: "v1.0.1"
+            value: $(tt.params.git-sha)
 
           - name: GIT_SHA
             value: "$(tt.params.git-sha)"
