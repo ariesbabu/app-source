@@ -20,7 +20,9 @@ spec:
         name: git-clone
       params:
         - name: url
-          value: $(params.GIT_URL)
+          value: https://github.com/ariesbabu/app-source.git
+        - name: revision
+          value: main
         - name: revision
           value: $(params.GIT_SHA)
         - name: deleteExisting
