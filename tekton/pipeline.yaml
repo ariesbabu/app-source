@@ -69,16 +69,22 @@ spec:
               - name: GITHUB_TOKEN
                 valueFrom:
                   secretKeyRef:
-                    name: github-pat          # your secret in the ci namespace
-                    key: token
+                    name: github-pat
+                    key: token                # ← Make sure this key exists in the secret!
             script: |
-              git clone https://$(params.GITHUB_TOKEN)@github.com/ariesbabu/gitops-config.git /workspace/gitops-ws
+              #!/bin/sh
+              set -e
+
+              git clone "https://${GITHUB_TOKEN}@github.com/ariesbabu/gitops-config.git" /workspace/gitops-ws
+
               cd /workspace/gitops-ws
+
               sed -i 's|harbor.apj-cxrules.win/lab/my-app:.*|harbor.apj-cxrules.win/lab/my-app:$(params.IMAGE_TAG) # {"$imagepolicy": "flux-system:my-app"}|' apps/base/deployment.yaml
+
               git config user.email "tekton@lab.internal"
               git config user.name "Tekton"
               git add -A
-              git commit -m "chore: deploy my-app:$(params.IMAGE_TAG)"
+              git commit -m "chore: deploy my-app:$(params.IMAGE_TAG)" || echo "No changes detected, nothing to commit"
               git push origin main
       workspaces:
         - name: gitops-ws
