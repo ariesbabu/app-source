@@ -1,0 +1,33 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: git-clone
+  namespace: default
+spec:
+  description: "Clone a Git repository"
+  params:
+    - name: url
+      description: The Git repository URL
+      type: string
+    - name: revision
+      description: The Git revision to checkout
+      type: string
+      default: main
+  workspaces:
+    - name: output
+      description: The workspace to clone the repo into
+  steps:
+    - name: clone
+      image: alpine/git:2.43.0
+      script: |
+        #!/bin/sh
+        set -eu
+        # Clone the repository
+        git clone $(params.url) $(workspaces.output.path)/source
+        cd $(workspaces.output.path)/source
+        # Checkout the specified revision
+        git checkout $(params.revision)
+        # Output the commit SHA for tagging
+        COMMIT_SHA=$(git rev-parse --short HEAD)
+        echo -n "$COMMIT_SHA" > $(workspaces.output.path)/commit-sha
+        echo "Cloned $(params.url) at $COMMIT_SHA"

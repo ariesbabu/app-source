@@ -1,0 +1,50 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: kaniko-build
+  namespace: default
+spec:
+  description: "Build and push a container image using Kaniko"
+  params:
+    - name: image
+      description: The full image name including registry
+      type: string
+    - name: dockerfile
+      description: Path to the Dockerfile
+      type: string
+      default: ./Dockerfile
+    - name: context
+      description: The build context directory
+      type: string
+      default: .
+  workspaces:
+    - name: source
+      description: Workspace containing the source code
+  steps:
+    - name: build-and-push
+      image: gcr.io/kaniko-project/executor:v1.19.2-debug
+      script: |
+        #!/busybox/sh
+        COMMIT_SHA=$(cat $(workspaces.source.path)/commit-sha)
+        
+        # Note: Kaniko automatically looks in /kaniko/.docker/
+        /kaniko/executor \
+          --context=$(workspaces.source.path)/source \
+          --dockerfile=$(workspaces.source.path)/source/$(params.dockerfile) \
+          --destination=$(params.image):${COMMIT_SHA} \
+          --destination=$(params.image):latest \
+          --cache=true \
+          --cache-repo=$(params.image)-cache
+      volumeMounts:
+        - name: docker-config
+          mountPath: /kaniko/.docker/
+      securityContext:
+        runAsUser: 0
+  
+  volumes:
+    - name: docker-config
+      secret:
+        secretName: docker-credentials
+        items:
+          - key: .dockerconfigjson
+            path: config.json

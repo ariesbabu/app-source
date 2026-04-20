@@ -1,0 +1,81 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: default
+  name: tekton-triggers-full-access
+rules:
+- apiGroups: ["triggers.tekton.dev"]
+  resources: ["eventlisteners", "triggers", "triggertemplates", "triggerbindings"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["tekton.dev"]
+  resources: ["pipelineruns", "taskruns"]
+  verbs: ["create"] # Needed so the Trigger can actually start your Pipeline
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: tekton-build-sa-eventlistener-binding
+  namespace: default
+subjects:
+- kind: ServiceAccount
+  name: tekton-build-sa
+  namespace: default
+roleRef:
+  kind: Role
+  name: eventlistener-reader
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: tekton-triggers-cluster-viewer
+rules:
+- apiGroups: ["triggers.tekton.dev"]
+  resources: ["clusterinterceptors", "clustertriggerbindings"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: tekton-build-sa-cluster-interceptor-binding
+subjects:
+- kind: ServiceAccount
+  name: tekton-build-sa
+  namespace: default
+roleRef:
+  kind: ClusterRole
+  name: tekton-triggers-cluster-viewer
+  apiGroup: rbac.authorization.k8s.io
+---
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: default
+  name: tekton-triggers-admin-role
+rules:
+  - apiGroups: ["triggers.tekton.dev"]
+    # Added "interceptors" and "clusterinterceptors" here
+    resources: ["eventlisteners", "triggers", "triggertemplates", "triggerbindings", "interceptors", "clusterinterceptors"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["tekton.dev"]
+    resources: ["pipelineruns", "taskruns"]
+    verbs: ["create", "get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["secrets", "configmaps"]
+    verbs: ["get", "list", "watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: tekton-triggers-admin-binding
+  namespace: default
+subjects:
+  - kind: ServiceAccount
+    name: tekton-build-sa
+    namespace: default
+roleRef:
+  kind: Role
+  name: tekton-triggers-admin-role
+  apiGroup: rbac.authorization.k8s.io

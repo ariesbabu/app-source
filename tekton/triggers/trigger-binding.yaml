@@ -1,0 +1,12 @@
+# tekton/triggers/trigger-binding.yaml
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerBinding
+metadata:
+  name: github-push-binding
+  namespace: default
+spec:
+  params:
+    - name: git-revision
+      value: $(body.after)
+    - name: git-url
+      value: $(body.repository.clone_url)

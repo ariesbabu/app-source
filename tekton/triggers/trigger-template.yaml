@@ -1,0 +1,37 @@
+# tekton/triggers/trigger-template.yaml
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: build-trigger-template
+  namespace: default
+spec:
+  params:
+    - name: git-revision
+      description: The Git revision
+    - name: git-url
+      description: The Git repository URL
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1
+      kind: PipelineRun
+      metadata:
+        generateName: build-triggered-
+      spec:
+        pipelineRef:
+          name: build-and-push-pipeline
+        serviceAccountName: tekton-build-sa
+        params:
+          - name: git-url
+            value: $(tt.params.git-url)
+          - name: git-revision
+            value: $(tt.params.git-revision)
+          - name: image
+            value: "docker.io/ariesbabu/app-source"
+        workspaces:
+          - name: shared-workspace
+            volumeClaimTemplate:
+              spec:
+                accessModes:
+                  - ReadWriteOnce
+                resources:
+                  requests:
+                    storage: 1Gi

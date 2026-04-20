@@ -1,91 +1,54 @@
+# tekton/pipeline.yaml
 apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
-  name: app-build-deploy
-  namespace: ci
+  name: build-and-push-pipeline
+  namespace: default
 spec:
+  description: "Pipeline to build and push container images for Flux CD"
   params:
-    - name: IMAGE_TAG
-    - name: GIT_SHA
-    - name: BUILD_TIME
-    # - name: GITHUB_TOKEN
+    - name: git-url
+      description: The Git repository URL
+      type: string
+    - name: git-revision
+      description: The Git revision to build
+      type: string
+      default: main
+    - name: image
+      description: The full image name (registry/repo)
+      type: string
+    - name: dockerfile
+      description: Path to the Dockerfile
+      type: string
+      default: ./Dockerfile
   workspaces:
-    - name: source-ws
-    - name: gitops-ws
+    - name: shared-workspace
+      description: Workspace shared between tasks
   tasks:
-    - name: git-clone-app
+    # Task 1: Clone the repository
+    - name: clone-repo
       taskRef:
         name: git-clone
-      workspaces:
-        - name: output
-          workspace: source-ws
       params:
         - name: url
-          value: https://github.com/ariesbabu/app-source.git
+          value: $(params.git-url)
         - name: revision
-          value: main
+          value: $(params.git-revision)
+      workspaces:
+        - name: output
+          workspace: shared-workspace
 
-    - name: kaniko-build-push
-      runAfter: [git-clone-app]
-      taskSpec:
-        workspaces:
-          - name: source
-        steps:
-          - name: build-push
-            image: gcr.io/kaniko-project/executor:latest
-            securityContext:
-              runAsUser: 0  # Keep this; it's valid for a Step
-            workingDir: /workspace/source
-            args:
-              - --dockerfile=Dockerfile
-              - --context=dir:///workspace/source
-              - --destination=harbor.apj-cxrules.win/lab/my-app:$(params.IMAGE_TAG)
-              - --insecure
-              - --insecure-pull
-              - --skip-tls-verify
-            volumeMounts:
-              - name: docker-config
-                mountPath: /kaniko/.docker/config.json
-                subPath: .dockerconfigjson
-        volumes:
-          - name: docker-config
-            secret:
-              secretName: harbor-robot-creds
+    # Task 2: Build and push the image
+    - name: build-image
+      taskRef:
+        name: kaniko-build
+      runAfter:
+        - clone-repo
+      params:
+        - name: image
+          value: $(params.image)
+        - name: dockerfile
+          value: $(params.dockerfile)
       workspaces:
         - name: source
-          workspace: source-ws
-
-    - name: update-gitops-tag
-      runAfter: [kaniko-build-push]
-      taskSpec:
-        workspaces:
-          - name: gitops-ws
-        steps:
-          - name: update-logic
-            image: alpine/git:latest
-            securityContext:
-              runAsUser: 0
-            env:
-              - name: GITHUB_TOKEN
-                valueFrom:
-                  secretKeyRef:
-                    name: github-pat
-                    key: token                # ← Make sure this key exists in the secret!
-            script: |
-              #!/bin/sh
-              set -e
-
-              git clone "https://${GITHUB_TOKEN}@github.com/ariesbabu/gitops-config.git" /workspace/gitops-ws
-
-              cd /workspace/gitops-ws
-
-              sed -i 's|harbor.apj-cxrules.win/lab/my-app:.*|harbor.apj-cxrules.win/lab/my-app:$(params.IMAGE_TAG) # {"$imagepolicy": "flux-system:my-app"}|' apps/base/deployment.yaml
-
-              git config user.email "tekton@lab.internal"
-              git config user.name "Tekton"
-              git add -A
-              git commit -m "chore: deploy my-app:$(params.IMAGE_TAG)" || echo "No changes detected, nothing to commit"
-              git push origin main
-      workspaces:
-        - name: gitops-ws
-          workspace: gitops-ws
+          workspace: shared-workspace

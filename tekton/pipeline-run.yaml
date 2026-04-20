@@ -1,0 +1,28 @@
+---
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: build-and-push-run-
+  namespace: default
+spec:
+  pipelineRef:
+    name: build-and-push-pipeline
+  # Move serviceAccountName inside taskRunTemplate
+  taskRunTemplate:
+    serviceAccountName: tekton-build-sa
+  params:
+    - name: git-url
+      value: "https://github.com/ariesbabu/app-source.git"
+    - name: git-revision
+      value: "main"
+    - name: image
+      value: "docker.io/ariesbabu/app-source"
+  workspaces:
+    - name: shared-workspace
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 1Gi
