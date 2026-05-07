@@ -1,3 +1,9 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tekton-sa
+  namespace: tekton-pipelines
+---  
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
@@ -46,7 +52,6 @@ roleRef:
   kind: ClusterRole
   name: tekton-triggers-cluster-viewer
   apiGroup: rbac.authorization.k8s.io
----
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
